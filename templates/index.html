@@ -8,6 +8,7 @@
     <h1>Simple Messenger</h1>
     <div id="register">
         <input id="username" type="text" placeholder="Enter username">
+        <input id="email" type="email" placeholder="Enter email">
         <button onclick="register()">Register</button>
     </div>
     <div id="chat" style="display: none;">
@@ -29,13 +30,14 @@
 
         function register() {
             username = document.getElementById('username').value;
-            if (!username) {
-                alert('Username cannot be empty');
+            var email = document.getElementById('email').value;
+            if (!username || !email) {
+                alert('Username and email cannot be empty');
                 return;
             }
             fetch('/register', {
                 method: 'POST',
-                body: JSON.stringify({ username: username }),
+                body: JSON.stringify({ username: username, email: email }),
                 headers: { 'Content-Type': 'application/json' }
             })
             .then(response => response.json())
@@ -61,27 +63,25 @@
             if (room) {
                 socket.emit('leave', { room: room, username: username });
                 room = null;
-                document.getElementById('messages').innerHTML += '<div>You left the room</div>';
+                document.getElementById('messages').innerHTML = '';
             }
         }
 
         function changeRoom() {
             var newRoom = document.getElementById('roomSelect').value;
-            if (room) {
-                socket.emit('leave', { room: room, username: username });
-            }
             if (newRoom !== 'Select Room') {
+                if (room) {
+                    socket.emit('leave', { room: room, username: username });
+                }
                 room = newRoom;
                 socket.emit('join', { room: room, username: username });
             }
         }
 
         socket.on('message', function(data) {
-            document.getElementById('messages').innerHTML += `<div>${data.username}: ${data.message}</div>`;
-        });
-
-        socket.on('status', function(data) {
-            document.getElementById('messages').innerHTML += `<div>${data.username} ${data.action} the room ${data.room}</div>`;
+            var messageElement = document.createElement('div');
+            messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+            document.getElementById('messages').appendChild(messageElement);
         });
     </script>
 </body>

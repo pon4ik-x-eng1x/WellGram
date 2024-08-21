@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
+from models import User
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -17,9 +18,12 @@ def index():
 def register():
     data = json.loads(request.data)
     username = data.get('username')
+    email = data.get('email')
+    
     if username in users:
         return jsonify({'success': False, 'message': 'Username already taken'})
-    users[username] = None
+    
+    users[username] = User(username, email)
     return jsonify({'success': True})
 
 @socketio.on('message')

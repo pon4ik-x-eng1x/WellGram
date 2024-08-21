@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog
-from tkinter import messagebox
+from tkinter import simpledialog, messagebox
 import websocket
 import json
 import threading
