@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Messenger</title>
+    <script src="https://cdn.socket.io/4.4.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Simple Messenger</h1>
+    <div id="register">
+        <input id="username" type="text" placeholder="Enter username">
+        <button onclick="register()">Register</button>
+    </div>
+    <div id="chat" style="display: none;">
+        <h2>Chat Room</h2>
+        <div id="messages"></div>
+        <input id="message" type="text" placeholder="Enter message">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="leaveRoom()">Leave Room</button>
+        <select id="roomSelect" onchange="changeRoom()">
+            <option>Select Room</option>
+            <option>Room 1</option>
+            <option>Room 2</option>
+        </select>
+    </div>
+    <script>
+        var socket = io();
+        var username = null;
+        var room = null;
+
+        function register() {
+            username = document.getElementById('username').value;
+            if (!username) {
+                alert('Username cannot be empty');
+                return;
+            }
+            fetch('/register', {
+                method: 'POST',
+                body: JSON.stringify({ username: username }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('register').style.display = 'none';
+                    document.getElementById('chat').style.display = 'block';
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        function sendMessage() {
+            var message = document.getElementById('message').value;
+            if (message && room) {
+                socket.emit('message', { room: room, message: message, username: username });
+                document.getElementById('message').value = '';
+            }
+        }
+
+        function leaveRoom() {
+            if (room) {
+                socket.emit('leave', { room: room, username: username });
+                room = null;
+                document.getElementById('messages').innerHTML += '<div>You left the room</div>';
+            }
+        }
+
+        function changeRoom() {
+            var newRoom = document.getElementById('roomSelect').value;
+            if (room) {
+                socket.emit('leave', { room: room, username: username });
+            }
+            if (newRoom !== 'Select Room') {
+                room = newRoom;
+                socket.emit('join', { room: room, username: username });
+            }
+        }
+
+        socket.on('message', function(data) {
+            document.getElementById('messages').innerHTML += `<div>${data.username}: ${data.message}</div>`;
+        });
+
+        socket.on('status', function(data) {
+            document.getElementById('messages').innerHTML += `<div>${data.username} ${data.action} the room ${data.room}</div>`;
+        });
+    </script>
+</body>
+</html>
